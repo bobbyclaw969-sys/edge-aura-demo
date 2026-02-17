@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Edge Aura Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #121212;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Edge Glow Effect */
+        .edge-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .edge-glow.active {
+            opacity: 1;
+        }
+        
+        .edge-glow::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(to bottom, var(--glow-color-1), transparent);
+        }
+        
+        .edge-glow::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(to top, var(--glow-color-2), transparent);
+        }
+        
+        .glow-left {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 30px;
+            bottom: 0;
+            background: linear-gradient(to right, var(--glow-color-3), transparent);
+        }
+        
+        .glow-right {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 30px;
+            bottom: 0;
+            background: linear-gradient(to left, var(--glow-color-4), transparent);
+        }
+        
+        .glow-corners {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, var(--glow-color-1) 0%, transparent 70%);
+        }
+        
+        .corner-tl { top: 0; left: 0; }
+        .corner-tr { top: 0; right: 0; }
+        .corner-bl { bottom: 0; left: 0; }
+        .corner-br { bottom: 0; right: 0; }
+        
+        /* App UI */
+        .app-container {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding-top: 60px;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #00ffff, #00ff00, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .status {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        
+        .status.active {
+            color: #00ff00;
+        }
+        
+        /* Toggle Card */
+        .card {
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toggle-label {
+            font-size: 18px;
+        }
+        
+        .toggle {
+            width: 56px;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle.on {
+            background: linear-gradient(90deg, #00ffff, #00ff00);
+        }
+        
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+        
+        .toggle.on::after {
+            transform: translateX(26px);
+        }
+        
+        /* Colors */
+        .color-section {
+            margin-top: 20px;
+        }
+        
+        .color-label {
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
+        .color-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .color-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .color-btn:active {
+            transform: scale(0.9);
+        }
+        
+        .color-btn.selected {
+            border-color: white;
+        }
+        
+        /* Presets */
+        .preset-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            padding: 8px 16px;
+            background: #333;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .preset-btn:active {
+            background: #444;
+        }
+        
+        /* Sliders */
+        .slider-section {
+            margin-top: 20px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #333;
+            -webkit-appearance: none;
+            margin-bottom: 15px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(90deg, #00ffff, #00ff00);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        /* Animation Toggle */
+        .animate-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .animate-toggle label {
+            color: #888;
+        }
+        
+        /* Permission Warning */
+        .permission-card {
+            background: #ff9800;
+            color: #000;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .permission-card h3 {
+            margin-bottom: 8px;
+        }
+        
+        .permission-btn {
+            background: #000;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
+        /* Info */
+        .info {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Edge Glow Overlay -->
+    <div class="edge-glow" id="edgeGlow">
+        <div class="glow-left"></div>
+        <div class="glow-right"></div>
+        <div class="glow-corners corner-tl"></div>
+        <div class="glow-corners corner-tr"></div>
+        <div class="glow-corners corner-bl"></div>
+        <div class="glow-corners corner-br"></div>
+    </div>
+    
+    <!-- App UI -->
+    <div class="app-container">
+        <h1>✨ Edge Aura</h1>
+        <p class="status" id="statusText">Inactive</p>
+        
+        <!-- Permission Warning -->
+        <div class="permission-card" id="permissionCard">
+            <h3>⚠️ Permission Required</h3>
+            <p>On real device: Settings → Display → Enable "Display over other apps"</p>
+        </div>
+        
+        <!-- Main Toggle -->
+        <div class="card">
+            <div class="toggle-row">
+                <span class="toggle-label">Enable Edge Glow</span>
+                <div class="toggle" id="mainToggle" onclick="toggleGlow()"></div>
+            </div>
+        </div>
+        
+        <!-- Colors -->
+        <div class="card">
+            <div class="color-section">
+                <p class="color-label">Glow Colors (tap to change)</p>
+                <div class="color-row" id="colorRow">
+                    <div class="color-btn selected" style="background: #00ffff" data-index="0"></div>
+                    <div class="color-btn" style="background: #00ff00" data-index="1"></div>
+                    <div class="color-btn" style="background: #ff00ff" data-index="2"></div>
+                    <div class="color-btn" style="background: #0080ff" data-index="3"></div>
+                </div>
+            </div>
+            
+            <!-- Presets -->
+            <div class="preset-row">
+                <button class="preset-btn" onclick="applyPreset('neon')">Neon</button>
+                <button class="preset-btn" onclick="applyPreset('fire')">Fire</button>
+                <button class="preset-btn" onclick="applyPreset('purple')">Purple</button>
+                <button class="preset-btn" onclick="applyPreset('rainbow')">Rainbow</button>
+            </div>
+            
+            <!-- Animation -->
+            <div class="animate-toggle">
+                <div class="toggle" id="animateToggle" onclick="toggleAnimation()"></div>
+                <label>Animate Colors</label>
+            </div>
+        </div>
+        
+        <!-- Sliders -->
+        <div class="card">
+            <div class="slider-section">
+                <div class="slider-label">
+                    <span>Edge Width</span>
+                    <span id="widthValue">30%</span>
+                </div>
+                <input type="range" min="10" max="100" value="30" id="widthSlider" oninput="updateWidth()">
+            </div>
+            
+            <div class="slider-section">
+                <div class="slider-label">
+                    <span>Glow Intensity</span>
+                    <span id="intensityValue">80%</span>
+                </div>
+                <input type="range" min="20" max="100" value="80" id="intensitySlider" oninput="updateIntensity()">
+            </div>
+        </div>
+        
+        <p class="info">Full app available on GitHub</p>
+    </div>
+    
+    <script>
+        let isEnabled = false;
+        let isAnimating = false;
+        let animationPhase = 0;
+        let colors = ['#00ffff', '#00ff00', '#ff00ff', '#0080ff'];
+        
+        const presets = {
+            neon: ['#00ffff', '#00ff00', '#ff00ff', '#0080ff'],
+            fire: ['#ff0000', '#ff6600', '#ffcc00', '#ff3300'],
+            purple: ['#9900ff', '#cc00ff', '#6600ff', '#3300ff'],
+            rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00']
+        };
+        
+        function toggleGlow() {
+            isEnabled = !isEnabled;
+            const toggle = document.getElementById('mainToggle');
+            const glow = document.getElementById('edgeGlow');
+            const status = document.getElementById('statusText');
+            
+            toggle.classList.toggle('on', isEnabled);
+            glow.classList.toggle('active', isEnabled);
+            status.classList.toggle('active', isEnabled);
+            status.textContent = isEnabled ? 'Active' : 'Inactive';
+            
+            if (isEnabled && isAnimating) {
+                startAnimation();
+            }
+        }
+        
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const toggle = document.getElementById('animateToggle');
+            toggle.classList.toggle('on', isAnimating);
+            
+            if (isAnimating && isEnabled) {
+                startAnimation();
+            }
+        }
+        
+        function startAnimation() {
+            if (!isEnabled || !isAnimating) return;
+            
+            animationPhase = (animationPhase + 2) % 360;
+            updateColors();
+            
+            setTimeout(startAnimation, 50);
+        }
+        
+        function updateColors() {
+            const animatedColors = isAnimating ? colors.map((c, i) => shiftHue(c, (animationPhase + i * 30) % 360)) : colors;
+            
+            document.documentElement.style.setProperty('--glow-color-1', animatedColors[0]);
+            document.documentElement.style.setProperty('--glow-color-2', animatedColors[1]);
+            document.documentElement.style.setProperty('--glow-color-3', animatedColors[2]);
+            document.documentElement.style.setProperty('--glow-color-4', animatedColors[3]);
+            
+            // Update corner glows
+            document.querySelector('.corner-tl').style.background = `radial-gradient(circle, ${animatedColors[0]} 0%, transparent 70%)`;
+            document.querySelector('.corner-tr').style.background = `radial-gradient(circle, ${animatedColors[1]} 0%, transparent 70%)`;
+            document.querySelector('.corner-bl').style.background = `radial-gradient(circle, ${animatedColors[2]} 0%, transparent 70%)`;
+            document.querySelector('.corner-br').style.background = `radial-gradient(circle, ${animatedColors[3]} 0%, transparent 70%)`;
+        }
+        
+        function shiftHue(color, shift) {
+            const hex = color.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            
+            // RGB to HSV
+            let r1 = r / 255, g1 = g / 255, b1 = b / 255;
+            const max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
+            let h, s, v = max;
+            const d = max - min;
+            s = max === 0 ? 0 : d / max;
+            
+            if (max === min) {
+                h = 0;
+            } else {
+                switch (max) {
+                    case r1: h = (g1 - b1) / d + (g1 < b1 ? 6 : 0); break;
+                    case g1: h = (b1 - r1) / d + 2; break;
+                    case b1: h = (r1 - g1) / d + 4; break;
+                }
+                h /= 6;
+            }
+            
+            h = (h + shift / 360) % 1;
+            
+            // HSV to RGB
+            let r2, g2, b2;
+            const i = Math.floor(h * 6);
+            const f = h * 6 - i;
+            const p = v * (1 - s);
+            const q = v * (1 - f * s);
+            const t = v * (1 - (1 - f) * s);
+            
+            switch (i % 6) {
+                case 0: r2 = v; g2 = t; b2 = p; break;
+                case 1: r2 = q; g2 = v; b2 = p; break;
+                case 2: r2 = p; g2 = v; b2 = t; break;
+                case 3: r2 = p; g2 = q; b2 = v; break;
+                case 4: r2 = t; g2 = p; b2 = v; break;
+                case 5: r2 = v; g2 = p; b2 = q; break;
+            }
+            
+            return '#' + [Math.round(r2 * 255), Math.round(g2 * 255), Math.round(b2 * 255)]
+                .map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+        
+        function applyPreset(name) {
+            colors = [...presets[name]];
+            const buttons = document.querySelectorAll('.color-btn');
+            colors.forEach((c, i) => {
+                buttons[i].style.background = c;
+            });
+            updateColors();
+        }
+        
+        function updateWidth() {
+            const value = document.getElementById('widthSlider').value;
+            document.getElementById('widthValue').textContent = value + '%';
+            
+            document.querySelector('.edge-glow::before').style.height = value + 'px';
+            document.querySelector('.edge-glow::after').style.height = value + 'px';
+            document.querySelector('.glow-left').style.width = value + 'px';
+            document.querySelector('.glow-right').style.width = value + 'px';
+            
+            const el = document.querySelector('.edge-glow');
+            el.style.setProperty('--edge-width', value + 'px');
+        }
+        
+        function updateIntensity() {
+            const value = document.getElementById('intensitySlider').value;
+            document.getElementById('intensityValue').textContent = value + '%';
+            document.getElementById('edgeGlow').style.opacity = value / 100;
+        }
+        
+        // Initialize
+        updateColors();
+    </script>
+</body>
+</html>
